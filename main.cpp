@@ -1,7 +1,6 @@
 #include "net.hpp"
 
 int main() {
-  // Create a new Net.
   auto net = std::make_shared<Net>();
 
   // Create a multi-threaded data loader for the MNIST dataset.

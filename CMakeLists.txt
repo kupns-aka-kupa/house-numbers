@@ -7,11 +7,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 include(FetchContent)
+include(ExternalProject)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules)
 
 set(DATASET_URL http://ufldl.stanford.edu/housenumbers)
+set(MNIST_URL http://yann.lecun.com/exdb/mnist)
 set(PYTORCH_URL https://download.pytorch.org/libtorch/nightly/cpu/libtorch-shared-with-deps-latest.zip)
 FetchContent_Declare(PyTorch URL ${PYTORCH_URL})
 
@@ -19,11 +21,33 @@ FetchContent_Declare(TrainData URL ${DATASET_URL}/train.tar.gz)
 FetchContent_Declare(TestData URL ${DATASET_URL}/test.tar.gz)
 FetchContent_Declare(ExtraData URL ${DATASET_URL}/extra.tar.gz)
 
+FetchContent_Declare(MNIST_TrainImages
+        URL ${MNIST_URL}/train-images-idx3-ubyte.gz
+        DOWNLOAD_NO_EXTRACT TRUE
+        DOWNLOAD_DIR ${CMAKE_CURRENT_BINARY_DIR})
+FetchContent_Declare(MNIST_TestImages
+        URL ${MNIST_URL}/t10k-images-idx3-ubyte.gz
+        DOWNLOAD_NO_EXTRACT TRUE
+        DOWNLOAD_DIR ${CMAKE_CURRENT_BINARY_DIR})
+
+FetchContent_Declare(MNIST_TrainLabels
+        URL ${MNIST_URL}/train-labels-idx1-ubyte.gz
+        DOWNLOAD_NO_EXTRACT TRUE
+        DOWNLOAD_DIR ${CMAKE_CURRENT_BINARY_DIR})
+FetchContent_Declare(MNIST_TestLabels
+        URL ${MNIST_URL}/t10k-labels-idx1-ubyte.gz
+        DOWNLOAD_NO_EXTRACT TRUE
+        DOWNLOAD_DIR ${CMAKE_CURRENT_BINARY_DIR})
+
 FetchContent_MakeAvailable(
         PyTorch
         TrainData
         TestData
         ExtraData
+        MNIST_TrainImages
+        MNIST_TrainLabels
+        MNIST_TestImages
+        MNIST_TestLabels
 )
 
 set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${pytorch_SOURCE_DIR})
@@ -43,8 +67,8 @@ add_executable(${PROJECT_NAME} ${PROJECT_SOURCES})
 
 target_compile_definitions(${PROJECT_NAME}
         PUBLIC
+        DATASET_PATH="${CMAKE_CURRENT_BINARY_DIR}"
         PROJECT_NAME="${PROJECT_NAME}"
-        DATASET_PATH="${traindata_SOURCE_DIR}"
         PROJECT_VERSION="${PROJECT_VERSION}")
 
 target_link_libraries(${PROJECT_NAME}
