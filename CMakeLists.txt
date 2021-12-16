@@ -40,6 +40,13 @@ set(PROJECT_SOURCES
         ${HEADER_FILES})
 
 add_executable(${PROJECT_NAME} ${PROJECT_SOURCES})
+
+target_compile_definitions(${PROJECT_NAME}
+        PUBLIC
+        PROJECT_NAME="${PROJECT_NAME}"
+        DATASET_PATH="${traindata_SOURCE_DIR}"
+        PROJECT_VERSION="${PROJECT_VERSION}")
+
 target_link_libraries(${PROJECT_NAME}
         PRIVATE
         ${TORCH_LIBRARIES})
