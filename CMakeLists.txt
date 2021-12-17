@@ -1,10 +1,12 @@
-cmake_minimum_required(VERSION 3.14)
+cmake_minimum_required(VERSION 3.15)
 
 project(house-numbers LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
+
+option(POPULATE_DATASET "Ensure download MNIST dataset" OFF)
 
 include(FetchContent)
 include(ExternalProject)
@@ -39,16 +41,19 @@ FetchContent_Declare(MNIST_TestLabels
         DOWNLOAD_NO_EXTRACT TRUE
         DOWNLOAD_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
-FetchContent_MakeAvailable(
-        PyTorch
-        TrainData
-        TestData
-        ExtraData
-        MNIST_TrainImages
-        MNIST_TrainLabels
-        MNIST_TestImages
-        MNIST_TestLabels
-)
+FetchContent_MakeAvailable(PyTorch)
+
+if (POPULATE_DATASET)
+    FetchContent_MakeAvailable(
+#            TrainData
+#            TestData
+#            ExtraData
+            MNIST_TrainImages
+            MNIST_TrainLabels
+            MNIST_TestImages
+            MNIST_TestLabels
+    )
+endif ()
 
 set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${pytorch_SOURCE_DIR})
 

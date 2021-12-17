@@ -1,0 +1,5 @@
+
+cmake-build-*
+.git*
+.idea
+README.md
