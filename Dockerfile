@@ -1,7 +1,4 @@
-FROM gcc:latest as build
-
-RUN apt-get update
-RUN apt-get install cmake -y
+FROM rikorose/gcc-cmake:gcc-9 as build
 
 COPY . /app
 
@@ -16,10 +13,8 @@ FROM ubuntu:latest
 
 WORKDIR /app
 
-COPY --from=build /app/build/house-numbers .
-COPY --from=build /app/build/_deps/pytorch-src/lib/* /usr/local/lib/
+COPY --from=build /app/build/mnist /usr/local/bin
 
-RUN ldconfig -v
+COPY pytorch.conf /etc/ld.so.conf.d/
 
-ENTRYPOINT [ "./house-numbers" ]
-
+ENTRYPOINT [ "mnist" ]

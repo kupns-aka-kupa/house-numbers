@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.15)
 
-project(house-numbers LANGUAGES CXX)
+project(mnist LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -58,8 +58,8 @@ endif ()
 set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${pytorch_SOURCE_DIR})
 
 find_package(Python3 COMPONENTS Interpreter REQUIRED)
-
 find_package(Torch REQUIRED)
+
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
 
 file(GLOB SOURCE_FILES ${PROJECT_SOURCE_DIR}/*.cpp)
