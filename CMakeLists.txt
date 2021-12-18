@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.15)
 
 project(mnist LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
@@ -16,7 +16,9 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules)
 
 set(DATASET_URL http://ufldl.stanford.edu/housenumbers)
 set(MNIST_URL http://yann.lecun.com/exdb/mnist)
-set(PYTORCH_URL https://download.pytorch.org/libtorch/nightly/cpu/libtorch-shared-with-deps-latest.zip)
+set(PYTORCH_URL https://download.pytorch.org/libtorch/nightly/cpu/libtorch-cxx11-abi-shared-with-deps-latest.zip)
+
+#ExternalProject_Add(pqxx GIT_REPOSITORY https://github.com/jtv/libpqxx.git GIT_TAG 7.2.0)
 FetchContent_Declare(PyTorch URL ${PYTORCH_URL})
 
 FetchContent_Declare(TrainData URL ${DATASET_URL}/train.tar.gz)
@@ -55,10 +57,13 @@ if (POPULATE_DATASET)
     )
 endif ()
 
-set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${pytorch_SOURCE_DIR})
+set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${pytorch_SOURCE_DIR}/share/cmake)
 
 find_package(Python3 COMPONENTS Interpreter REQUIRED)
 find_package(Torch REQUIRED)
+find_package(Boost COMPONENTS log REQUIRED)
+find_package(PostgreSQL REQUIRED)
+find_package(libpqxx REQUIRED)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
 
@@ -78,8 +83,13 @@ target_compile_definitions(${PROJECT_NAME}
 
 target_link_libraries(${PROJECT_NAME}
         PRIVATE
-        ${TORCH_LIBRARIES})
+        libpqxx::pqxx
+        ${TORCH_LIBRARIES}
+        ${PostgreSQL_LIBRARIES}
+        ${Boost_LIBRARIES})
 
 target_include_directories(${PROJECT_NAME}
         PRIVATE
-        ${TORCH_INCLUDES})
+        ${TORCH_INCLUDE_DIRS}
+        ${PostgreSQL_INCLUDE_DIRS}
+        ${Boost_INCLUDE_DIR})

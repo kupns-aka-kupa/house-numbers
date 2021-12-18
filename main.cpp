@@ -1,13 +1,39 @@
 #include "net.hpp"
+#include <boost/log/core.hpp>
+#include <boost/log/expressions.hpp>
+#include <boost/log/trivial.hpp>
+#include <pqxx/pqxx>
+
+void init() {
+  boost::log::core::get()->set_filter(boost::log::trivial::severity >=
+                                      boost::log::trivial::trace);
+}
+
+const std::string schema = "mnist_d2a23ca6";
 
 int main() {
+  init();
+
+  pqxx::connection connection{std::getenv("CONNECTION_STRING")};
+  pqxx::work transaction{connection, PROJECT_NAME};
+
+  if (connection.is_open()) {
+    BOOST_LOG_TRIVIAL(info)
+        << "Opened database successfully: " << connection.dbname()
+        << " Backend version: " << connection.server_version()
+        << " Protocol version: " << connection.protocol_version();
+
+  } else {
+    BOOST_LOG_TRIVIAL(fatal) << "Can't open database";
+    return EXIT_FAILURE;
+  }
+
   auto net = std::make_shared<Net>();
 
-  // Create a multi-threaded data loader for the MNIST dataset.
-  auto data_loader =
-      torch::data::make_data_loader(torch::data::datasets::MNIST(DATASET_PATH).map(
-                                        torch::data::transforms::Stack<>()),
-                                    /*batch_size=*/64);
+  auto data_loader = torch::data::make_data_loader(
+      torch::data::datasets::MNIST(DATASET_PATH)
+          .map(torch::data::transforms::Stack<>()),
+      /*batch_size=*/64);
 
   // Instantiate an SGD optimization algorithm to update our Net's parameters.
   torch::optim::SGD optimizer(net->parameters(), /*lr=*/0.01);
@@ -28,11 +54,15 @@ int main() {
       optimizer.step();
       // Output the loss and checkpoint every 100 batches.
       if (++batch_index % 100 == 0) {
-        std::cout << "Epoch: " << epoch << " | Batch: " << batch_index
-                  << " | Loss: " << loss.item<float>() << std::endl;
-        // Serialize your model periodically as a checkpoint.
+        BOOST_LOG_TRIVIAL(debug)
+            << "Epoch: " << epoch << " | Batch: " << batch_index
+            << " | Loss: " << loss.item<float>() << std::endl;
+
+        transaction.exec_params("insert into mnist_d2a23ca6.loss (batch, epoch, loss) values ($1, $2, $3)", batch_index, epoch, loss.item<float>());
+        transaction.commit();
         torch::save(net, "net.pt");
       }
     }
   }
+  return EXIT_SUCCESS;
 }
