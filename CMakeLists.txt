@@ -59,39 +59,12 @@ endif ()
 
 set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${pytorch_SOURCE_DIR}/share/cmake)
 
+find_package(Boost COMPONENTS log REQUIRED)
 find_package(Python3 COMPONENTS Interpreter REQUIRED)
 find_package(Torch REQUIRED)
-find_package(Boost COMPONENTS log REQUIRED)
-find_package(PostgreSQL REQUIRED)
-find_package(libpqxx REQUIRED)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
 
-file(COPY scripts DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-
-file(GLOB SOURCE_FILES ${PROJECT_SOURCE_DIR}/*.cpp)
-file(GLOB HEADER_FILES ${PROJECT_SOURCE_DIR}/*.hpp)
-set(PROJECT_SOURCES
-        ${SOURCE_FILES}
-        ${HEADER_FILES})
-
-add_executable(${PROJECT_NAME} ${PROJECT_SOURCES})
-
-target_compile_definitions(${PROJECT_NAME}
-        PUBLIC
-        DATASET_PATH="${CMAKE_CURRENT_BINARY_DIR}"
-        PROJECT_NAME="${PROJECT_NAME}"
-        PROJECT_VERSION="${PROJECT_VERSION}")
-
-target_link_libraries(${PROJECT_NAME}
-        PRIVATE
-        libpqxx::pqxx
-        ${TORCH_LIBRARIES}
-        ${PostgreSQL_LIBRARIES}
-        ${Boost_LIBRARIES})
-
-target_include_directories(${PROJECT_NAME}
-        PRIVATE
-        ${TORCH_INCLUDE_DIRS}
-        ${PostgreSQL_INCLUDE_DIRS}
-        ${Boost_INCLUDE_DIR})
+add_subdirectory(trainer)
+add_subdirectory(app)
+add_subdirectory(tests)
