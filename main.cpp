@@ -2,14 +2,15 @@
 #include <boost/log/core.hpp>
 #include <boost/log/expressions.hpp>
 #include <boost/log/trivial.hpp>
+#include <filesystem>
 #include <pqxx/pqxx>
+
+namespace fs = std::filesystem;
 
 void init() {
   boost::log::core::get()->set_filter(boost::log::trivial::severity >=
                                       boost::log::trivial::trace);
 }
-
-const std::string schema = "mnist_d2a23ca6";
 
 int main() {
   init();
@@ -20,12 +21,22 @@ int main() {
   if (connection.is_open()) {
     BOOST_LOG_TRIVIAL(info)
         << "Opened database successfully: " << connection.dbname()
-        << " Backend version: " << connection.server_version()
-        << " Protocol version: " << connection.protocol_version();
+        << " | Backend version: " << connection.server_version()
+        << " | Protocol version: " << connection.protocol_version();
 
   } else {
     BOOST_LOG_TRIVIAL(fatal) << "Can't open database";
     return EXIT_FAILURE;
+  }
+
+  for (const auto &entry : fs::directory_iterator("scripts")) {
+    auto query_name = entry.path().filename().replace_extension();
+    std::ifstream f(entry.path(), std::ios::in);
+    std::string query(entry.file_size(), '\0');
+    f.read(query.data(), entry.file_size());
+    connection.prepare(query_name, query);
+    f.close();
+    BOOST_LOG_TRIVIAL(debug) << "Register new sql query_name " << query_name;
   }
 
   auto net = std::make_shared<Net>();
@@ -56,9 +67,10 @@ int main() {
       if (++batch_index % 100 == 0) {
         BOOST_LOG_TRIVIAL(debug)
             << "Epoch: " << epoch << " | Batch: " << batch_index
-            << " | Loss: " << loss.item<float>() << std::endl;
+            << " | Loss: " << loss.item<float>();
 
-        transaction.exec_params("insert into mnist_d2a23ca6.loss (batch, epoch, loss) values ($1, $2, $3)", batch_index, epoch, loss.item<float>());
+        transaction.exec_prepared("new_record", batch_index, epoch,
+                                  loss.item<float>());
         transaction.commit();
         torch::save(net, "net.pt");
       }
